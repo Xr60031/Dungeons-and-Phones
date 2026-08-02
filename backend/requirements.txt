@@ -1,0 +1,8 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+SQLAlchemy>=2.0
+pydantic>=2.10
+websockets>=13
+qrcode>=7.4
+pillow>=11.0
+python-multipart>=0.0.9
