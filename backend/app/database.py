@@ -53,4 +53,8 @@ def run_migrations():
             conn.execute(
                 text('ALTER TABLE characters ADD COLUMN temp_hp INTEGER DEFAULT 0')
             )
+        if "armor_class" not in existing_cols:
+            conn.execute(
+                text('ALTER TABLE characters ADD COLUMN armor_class INTEGER DEFAULT 10')
+            )
         conn.commit()

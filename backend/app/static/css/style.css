@@ -449,30 +449,53 @@ button {
 
 .hp-delta-row {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: 1fr 52px 52px;
   gap: 5px;
   margin-top: 10px;
 }
 
-.hp-delta-btn {
-  background: var(--stone-700);
+.hp-delta-input {
+  width: 100%;
+  background: var(--stone-950);
+  border: 2px solid var(--stone-600);
   color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 18px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+/* Saca las flechitas nativas de subir/bajar: se escribe el número y listo. */
+.hp-delta-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.hp-delta-input::-webkit-outer-spin-button,
+.hp-delta-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hp-sign-btn {
+  background: var(--stone-700);
   border: none;
   border-bottom: 3px solid var(--stone-950);
   padding: 8px 2px;
-  font-size: 16px;
+  font-size: 20px;
+  line-height: 1;
   font-family: var(--font-body);
 }
 
-.hp-delta-btn.positive {
+.hp-sign-btn.positive {
   color: var(--hp-full);
 }
 
-.hp-delta-btn.negative {
+.hp-sign-btn.negative {
   color: var(--hp-critical);
 }
 
-.hp-delta-btn:active {
+.hp-sign-btn:active {
   transform: translateY(2px);
   border-bottom-width: 1px;
 }
@@ -552,6 +575,29 @@ button {
 
 .initiative-badge {
   font-size: 17px;
+  color: var(--gold);
+}
+
+.ac-badge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: var(--stone-700);
+  border: 2px solid var(--stone-950);
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 15px;
+  padding: 3px 7px;
+  cursor: pointer;
+}
+
+.ac-badge:active {
+  transform: translateY(2px);
+}
+
+.ac-value {
   color: var(--gold);
 }
 

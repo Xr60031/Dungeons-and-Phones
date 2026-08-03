@@ -110,6 +110,18 @@ def add_temp_hp(
     return character
 
 
+def set_armor_class(
+    db: Session, character: models.Character, value: int
+) -> models.Character:
+    """Fija la Clase de Armadura (CA). Es solo informativa (no afecta
+    ningún cálculo del backend) y, al igual que los HP temporales,
+    la puede tocar cualquiera (DM o jugador), no solo el DM."""
+    character.armor_class = max(value, 0)
+    db.commit()
+    db.refresh(character)
+    return character
+
+
 def delete_character(db: Session, character: models.Character) -> None:
     db.delete(character)
     db.commit()

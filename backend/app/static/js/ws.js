@@ -10,6 +10,7 @@
  *   → cliente envía: {action, payload}
  *     - hp_delta          {character_id, delta}
  *     - add_temp_hp       {character_id, amount}  (amount siempre > 0)
+ *     - set_armor_class   {character_id, value}   (CA, solo informativa)
  *     - update_character  {character_id, data: {...}}
  *     - create_character  {name, char_class, sprite, hp_current, hp_max,
  *                           is_monster, initiative}
@@ -98,6 +99,8 @@ const DungeonsWS = (() => {
       send("hp_delta", { character_id: characterId, delta }),
     addTempHp: (characterId, amount) =>
       send("add_temp_hp", { character_id: characterId, amount }),
+    setArmorClass: (characterId, value) =>
+      send("set_armor_class", { character_id: characterId, value }),
     updateCharacter: (characterId, data) =>
       send("update_character", { character_id: characterId, data }),
     createCharacter: (data) => send("create_character", data),

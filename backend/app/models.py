@@ -44,6 +44,7 @@ class Character(Base):
     hp_current = Column(Integer, nullable=False, default=10)
     hp_max = Column(Integer, nullable=False, default=10)
     temp_hp = Column(Integer, nullable=False, default=0)  # HP temporales (escudo)
+    armor_class = Column(Integer, nullable=False, default=10)  # CA, solo informativa
 
     is_monster = Column(Boolean, default=False)
 

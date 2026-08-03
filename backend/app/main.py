@@ -47,6 +47,7 @@ def character_to_dict(char: models.Character) -> dict:
         "hp_current": char.hp_current,
         "hp_max": char.hp_max,
         "temp_hp": char.temp_hp or 0,
+        "armor_class": char.armor_class if char.armor_class is not None else 10,
         "is_monster": char.is_monster,
         "initiative": char.initiative,
         "order_index": char.order_index,
@@ -165,6 +166,20 @@ async def add_temp_hp(
     return char
 
 
+@app.post("/characters/{character_id}/armor-class", response_model=schemas.Character)
+async def set_armor_class(
+    character_id: int, data: schemas.ArmorClassSet, db: Session = Depends(get_db)
+):
+    """Fija la CA. Solo informativa (no altera ningún cálculo); la puede
+    pedir cualquiera (DM o jugador), igual que /temp-hp."""
+    char = crud.get_character(db, character_id)
+    if not char:
+        raise HTTPException(404, "Personaje no encontrado")
+    char = crud.set_armor_class(db, char, data.value)
+    await broadcast_state(db, char.campaign_id)
+    return char
+
+
 @app.delete("/characters/{character_id}")
 async def delete_character(character_id: int, db: Session = Depends(get_db)):
     char = crud.get_character(db, character_id)
@@ -203,6 +218,11 @@ async def websocket_endpoint(websocket: WebSocket, campaign_id: int):
                     char = crud.get_character(db, payload["character_id"])
                     if char:
                         crud.add_temp_hp(db, char, payload["amount"])
+
+                elif action == "set_armor_class":
+                    char = crud.get_character(db, payload["character_id"])
+                    if char:
+                        crud.set_armor_class(db, char, payload["value"])
 
                 elif action == "update_character":
                     char = crud.get_character(db, payload["character_id"])

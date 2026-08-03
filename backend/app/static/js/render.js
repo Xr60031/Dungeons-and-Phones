@@ -21,8 +21,6 @@ const STATUS_LABELS = {
   dead: "Dead",
 };
 
-const HP_DELTAS = [-10, -5, -1, 1, 5, 10];
-
 // Cantidad de partículas que salpica la barra. Sin vida (pct 0, es decir
 // unconscious o dead) no hay partículas: no queda energía para sprinklear.
 const PARTICLE_COUNT = 4;
@@ -129,6 +127,7 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
         ${isHiddenEnemyInfo ? "" : `<div class="char-class"></div>`}
       </div>
       <div class="initiative-badge hidden"></div>
+      <div class="ac-badge" data-action="set-ac" title="Tocar para editar la CA">🛡<span class="ac-value"></span></div>
       ${
         isDM
           ? `<div class="char-actions">
@@ -153,12 +152,15 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
       isHiddenEnemyInfo
         ? ""
         : `<div class="hp-delta-row">
-             ${HP_DELTAS.map(
-               (d) =>
-                 `<button class="hp-delta-btn ${d > 0 ? "positive" : "negative"}" data-delta="${d}">${
-                   d > 0 ? "+" + d : d
-                 }</button>`
-             ).join("")}
+             <input
+               type="number"
+               inputmode="numeric"
+               class="hp-delta-input"
+               placeholder="0"
+               min="0"
+             />
+             <button class="hp-sign-btn negative" data-sign="-1" title="Restar">−</button>
+             <button class="hp-sign-btn positive" data-sign="1" title="Sumar">+</button>
            </div>
            <div class="hp-combo-preview hidden">
              <div class="combo-taps"></div>
@@ -191,6 +193,8 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
       charName: card.querySelector(".char-name"),
       charClass: card.querySelector(".char-class"),
       initiativeBadge: card.querySelector(".initiative-badge"),
+      acValue: card.querySelector(".ac-value"),
+      hpDeltaInput: card.querySelector(".hp-delta-input"),
       hpBarTrack: card.querySelector(".hp-bar-track"),
       hpBarFill: card.querySelector(".hp-bar-fill"),
       hpBarWrap: card.querySelector(".hp-bar-wrap"),
@@ -202,21 +206,47 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
     },
   };
 
+  card.querySelector('[data-action="set-ac"]').addEventListener("click", () => entry.ctx.onSetArmorClass(entry.char));
+
   if (!isHiddenEnemyInfo) {
-    card.querySelectorAll("[data-delta]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        entry.pendingTaps.push(parseInt(btn.dataset.delta, 10));
-        updateComboPreview(entry);
-      });
+    const deltaInput = entry.els.hpDeltaInput;
+
+    // Suma (o resta) el valor cargado en el input como un tap más al
+    // combo pendiente, según el signo del botón tocado. El input se
+    // limpia después de cada tap para que el próximo número se cargue
+    // desde cero.
+    const addSignedTap = (sign) => {
+      const amount = parseInt(deltaInput.value, 10);
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      entry.pendingTaps.push(sign * amount);
+      deltaInput.value = "";
+      updateComboPreview(entry);
+      deltaInput.focus();
+    };
+
+    card.querySelectorAll("[data-sign]").forEach((btn) => {
+      btn.addEventListener("click", () => addSignedTap(parseInt(btn.dataset.sign, 10)));
     });
+
+    // Enter en el teclado numérico suma por defecto (el caso más común),
+    // sin obligar a tocar el botón "+" a mano.
+    deltaInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addSignedTap(1);
+      }
+    });
+
     card.querySelector('[data-action="add-temp-hp"]').addEventListener("click", () => entry.ctx.onAddTempHp(entry.char));
     card.querySelector('[data-action="combo-cancel"]').addEventListener("click", () => {
       entry.pendingTaps = [];
+      deltaInput.value = "";
       updateComboPreview(entry);
     });
     card.querySelector('[data-action="combo-confirm"]').addEventListener("click", () => {
       const total = entry.pendingTaps.reduce((a, b) => a + b, 0);
       entry.pendingTaps = [];
+      deltaInput.value = "";
       updateComboPreview(entry);
       if (total !== 0) entry.ctx.onDelta(entry.char, total);
     });
@@ -280,6 +310,8 @@ function updateCharCard(entry, char, displayIndex, ctx) {
   } else {
     els.initiativeBadge.classList.add("hidden");
   }
+
+  els.acValue.textContent = char.armor_class ?? 10;
 
   // ---- barra de HP ----
   const pct = char.hp_max > 0 ? Math.max(0, Math.min(100, (char.hp_current / char.hp_max) * 100)) : 0;

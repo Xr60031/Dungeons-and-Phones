@@ -15,6 +15,7 @@ class CharacterBase(BaseModel):
     hp_current: int = 10
     hp_max: int = 10
     temp_hp: int = 0
+    armor_class: int = 10
     is_monster: bool = False
     initiative: Optional[int] = None
     condition: str = "Healthy"
@@ -32,6 +33,7 @@ class CharacterUpdate(BaseModel):
     hp_current: Optional[int] = None
     hp_max: Optional[int] = None
     temp_hp: Optional[int] = None
+    armor_class: Optional[int] = None
     is_monster: Optional[bool] = None
     initiative: Optional[int] = None
     order_index: Optional[int] = None
@@ -45,6 +47,10 @@ class HPDelta(BaseModel):
 
 class TempHPAdd(BaseModel):
     amount: int  # siempre positivo, se suma a los HP temporales existentes
+
+
+class ArmorClassSet(BaseModel):
+    value: int  # CA nueva, la pone directamente cualquiera (DM o jugador)
 
 
 class Character(CharacterBase):

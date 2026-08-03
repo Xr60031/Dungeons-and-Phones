@@ -13,7 +13,7 @@ from typing import Literal
 HPStatus = Literal["full", "staggered", "critical", "unconscious", "dead"]
 
 STATUS_COLORS = {
-    "full": "#4ADE80",         # verde
+    "healthy": "#4ADE80",         # verde
     "staggered": "#FB923C",    # naranja
     "critical": "#EF4444",     # rojo
     "unconscious": "#38BDF8",  # celeste
@@ -37,4 +37,4 @@ def get_hp_status(hp_current: int, hp_max: int) -> HPStatus:
         return "critical"
     if pct <= 50:
         return "staggered"
-    return "full"
+    return "healthy"

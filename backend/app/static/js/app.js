@@ -75,6 +75,7 @@ function renderBoard() {
     onEdit: openEditModal,
     onDelete: handleDelete,
     onAddTempHp: handleAddTempHp,
+    onSetArmorClass: handleSetArmorClass,
   });
 }
 
@@ -109,6 +110,28 @@ function handleAddTempHp(char) {
   DungeonsWS.addTempHp(char.id, amount);
 }
 
+function handleSetArmorClass(char) {
+  // Cualquiera (jugador o DM) puede fijar la CA de un personaje visible,
+  // sin pasar por el modal de edición (que es solo del DM). Es un dato
+  // puramente informativo: no afecta ningún cálculo del backend.
+  const input = prompt(`CA (Clase de Armadura) de ${char.name}:`, char.armor_class ?? 10);
+  if (input === null) return; // canceló
+
+  const value = parseInt(input, 10);
+  if (!Number.isFinite(value) || value < 0) {
+    showToast("Ingresá un número válido (0 o más)");
+    return;
+  }
+
+  // Optimista: se ve el cambio ya mismo, el broadcast del server confirma.
+  const idx = state.characters.findIndex((c) => c.id === char.id);
+  if (idx !== -1) {
+    state.characters[idx] = { ...char, armor_class: value };
+    renderBoard();
+  }
+  DungeonsWS.setArmorClass(char.id, value);
+}
+
 function handleDelete(char) {
   if (!confirm(`¿Eliminar a ${char.name}?`)) return;
   DungeonsWS.deleteCharacter(char.id);
@@ -123,6 +146,7 @@ function openCreateModal() {
   document.getElementById("f-hp-current").value = 10;
   document.getElementById("f-hp-max").value = 10;
   document.getElementById("f-hp-temp").value = 0;
+  document.getElementById("f-armor-class").value = 10;
   el.fCondition.value = 0;
   el.fConditionLabel.textContent = CONDITIONS[0];
   el.fConditionRounds.value = "";
@@ -138,6 +162,7 @@ function openEditModal(char) {
   document.getElementById("f-hp-current").value = char.hp_current;
   document.getElementById("f-hp-max").value = char.hp_max;
   document.getElementById("f-hp-temp").value = char.temp_hp ?? 0;
+  document.getElementById("f-armor-class").value = char.armor_class ?? 10;
   document.getElementById("f-is-monster").checked = !!char.is_monster;
   const idx = conditionIndex(char.condition || "Healthy");
   el.fCondition.value = idx;
@@ -171,6 +196,7 @@ el.charForm.addEventListener("submit", (e) => {
     hp_current: parseInt(document.getElementById("f-hp-current").value, 10),
     hp_max: parseInt(document.getElementById("f-hp-max").value, 10),
     temp_hp: parseInt(document.getElementById("f-hp-temp").value, 10) || 0,
+    armor_class: parseInt(document.getElementById("f-armor-class").value, 10) || 0,
     is_monster: document.getElementById("f-is-monster").checked,
     initiative: initiativeRaw === "" ? null : parseInt(initiativeRaw, 10),
     condition: CONDITIONS[parseInt(el.fCondition.value, 10)],
