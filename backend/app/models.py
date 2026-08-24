@@ -43,7 +43,8 @@ class Character(Base):
 
     hp_current = Column(Integer, nullable=False, default=10)
     hp_max = Column(Integer, nullable=False, default=10)
-    temp_hp = Column(Integer, nullable=False, default=0)  # HP temporales (escudo)
+    temp_hp = Column(Integer, nullable=False, default=0)  # HP temporales (escudo);
+    # no se acumulan, se reemplaza por el valor más alto (ver crud.add_temp_hp)
     armor_class = Column(Integer, nullable=False, default=10)  # CA, solo informativa
 
     is_monster = Column(Boolean, default=False)
@@ -51,6 +52,11 @@ class Character(Base):
     # Condición de estado (D&D): Healthy, Poisoned, Stunned, etc.
     condition = Column(String, default="Healthy")
     condition_rounds = Column(Integer, nullable=True)  # rondas restantes, editable
+
+    # Condición libre: texto abierto que escribe el DM (ej: "Maldito por
+    # el altar", "Marcado por el cazador"). Independiente de `condition`
+    # (la de la lista fija de D&D); las dos pueden estar activas a la vez.
+    condition_note = Column(String, nullable=True)
 
     initiative = Column(Integer, nullable=True)  # orden de iniciativa
     order_index = Column(Integer, default=0)  # posición manual en la lista

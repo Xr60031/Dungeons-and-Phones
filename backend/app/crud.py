@@ -101,10 +101,15 @@ def apply_hp_delta(
 def add_temp_hp(
     db: Session, character: models.Character, amount: int
 ) -> models.Character:
-    """Suma HP temporales. Lo puede pedir cualquiera (DM o jugador),
-    a diferencia de editar el personaje que es solo del DM."""
-    if amount > 0:
-        character.temp_hp = (character.temp_hp or 0) + amount
+    """Fija los HP temporales (escudo). Sigue la regla estándar de
+    D&D: los HP temporales NO se acumulan entre sí. Si el valor nuevo
+    es mayor al que ya tenía, lo reemplaza; si es menor o igual, no
+    hace nada (se queda con el más alto). Lo puede pedir cualquiera
+    (DM o jugador), igual que editar el personaje que es solo del DM
+    para el resto de los campos."""
+    current = character.temp_hp or 0
+    if amount > current:
+        character.temp_hp = amount
         db.commit()
         db.refresh(character)
     return character

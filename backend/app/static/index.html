@@ -92,21 +92,23 @@
       </label>
 
       <div class="field">
-        <label for="f-condition">Condición: <span id="f-condition-label">Healthy</span></label>
-        <input type="range" id="f-condition" min="0" max="15" step="1" value="0" list="condition-ticks" />
-        <datalist id="condition-ticks">
-          <option value="0"></option><option value="1"></option><option value="2"></option>
-          <option value="3"></option><option value="4"></option><option value="5"></option>
-          <option value="6"></option><option value="7"></option><option value="8"></option>
-          <option value="9"></option><option value="10"></option><option value="11"></option>
-          <option value="12"></option><option value="13"></option><option value="14"></option>
-          <option value="15"></option>
-        </datalist>
+        <label for="f-condition">Condición</label>
+        <select id="f-condition"></select>
       </div>
 
       <div class="field">
         <label for="f-condition-rounds">Rondas restantes</label>
         <input type="number" id="f-condition-rounds" min="0" placeholder="—" />
+      </div>
+
+      <div class="field">
+        <label for="f-condition-note">Condición libre (opcional)</label>
+        <input
+          type="text"
+          id="f-condition-note"
+          maxlength="80"
+          placeholder="Ej: Maldito por el altar, marcado por el cazador..."
+        />
       </div>
 
       <div class="modal-actions">

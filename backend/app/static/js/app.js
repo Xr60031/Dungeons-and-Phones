@@ -30,8 +30,8 @@ const el = {
   roleHint: document.getElementById("role-hint"),
   btnChangeRole: document.getElementById("btn-change-role"),
   fCondition: document.getElementById("f-condition"),
-  fConditionLabel: document.getElementById("f-condition-label"),
   fConditionRounds: document.getElementById("f-condition-rounds"),
+  fConditionNote: document.getElementById("f-condition-note"),
 };
 
 // ---------- pantallas ----------
@@ -89,22 +89,20 @@ function handleDelta(char, delta) {
   DungeonsWS.hpDelta(char.id, delta);
 }
 
-function handleAddTempHp(char) {
-  // Cualquiera (jugador o DM) puede sumarle HP temporales a un personaje
-  // visible, sin pasar por el modal de edición (que es solo del DM).
-  const input = prompt(`¿Cuántos HP temporales le sumás a ${char.name}?`, "5");
-  if (input === null) return; // canceló
+function handleAddTempHp(char, amount) {
+  // Cualquiera (jugador o DM) puede proponer HP temporales para un
+  // personaje visible, tipeando en el mismo desplegable de vida (modo
+  // 🛡). No se acumulan: si `amount` es mayor a lo que ya tenía, lo
+  // reemplaza; si no, no cambia nada (misma regla que crud.add_temp_hp).
+  if (!Number.isFinite(amount) || amount <= 0) return;
 
-  const amount = parseInt(input, 10);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    showToast("Ingresá un número mayor a 0");
-    return;
-  }
-
-  // Optimista: se ve el escudo ya mismo, el broadcast del server confirma.
+  // Optimista: se ve el escudo ya mismo si corresponde, el broadcast
+  // del server confirma/corrige.
   const idx = state.characters.findIndex((c) => c.id === char.id);
   if (idx !== -1) {
-    state.characters[idx] = { ...char, temp_hp: (char.temp_hp || 0) + amount };
+    const current = char.temp_hp || 0;
+    const newTempHp = amount > current ? amount : current;
+    state.characters[idx] = { ...char, temp_hp: newTempHp };
     renderBoard();
   }
   DungeonsWS.addTempHp(char.id, amount);
@@ -148,8 +146,8 @@ function openCreateModal() {
   document.getElementById("f-hp-temp").value = 0;
   document.getElementById("f-armor-class").value = 10;
   el.fCondition.value = 0;
-  el.fConditionLabel.textContent = CONDITIONS[0];
   el.fConditionRounds.value = "";
+  el.fConditionNote.value = "";
   el.modalOverlay.classList.remove("hidden");
 }
 
@@ -166,8 +164,8 @@ function openEditModal(char) {
   document.getElementById("f-is-monster").checked = !!char.is_monster;
   const idx = conditionIndex(char.condition || "Healthy");
   el.fCondition.value = idx;
-  el.fConditionLabel.textContent = CONDITIONS[idx];
   el.fConditionRounds.value = char.condition_rounds ?? "";
+  el.fConditionNote.value = char.condition_note ?? "";
   el.modalOverlay.classList.remove("hidden");
 }
 
@@ -179,10 +177,6 @@ el.fabAdd.addEventListener("click", openCreateModal);
 el.modalCancel.addEventListener("click", closeModal);
 el.modalOverlay.addEventListener("click", (e) => {
   if (e.target === el.modalOverlay) closeModal();
-});
-
-el.fCondition.addEventListener("input", () => {
-  el.fConditionLabel.textContent = CONDITIONS[parseInt(el.fCondition.value, 10)];
 });
 
 el.charForm.addEventListener("submit", (e) => {
@@ -201,6 +195,7 @@ el.charForm.addEventListener("submit", (e) => {
     initiative: initiativeRaw === "" ? null : parseInt(initiativeRaw, 10),
     condition: CONDITIONS[parseInt(el.fCondition.value, 10)],
     condition_rounds: roundsRaw === "" ? null : parseInt(roundsRaw, 10),
+    condition_note: el.fConditionNote.value.trim() || null,
   };
 
   if (!payload.name) return;

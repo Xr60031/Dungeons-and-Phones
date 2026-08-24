@@ -1,7 +1,4 @@
 """
-Lógica de estados automáticos según el porcentaje de HP,
-compartida por toda la API para mantener consistencia con el frontend.
-
     Full          51-100%   Verde
     Staggered     26-50%    Naranja
     Critical      1-25%     Rojo
@@ -13,11 +10,11 @@ from typing import Literal
 HPStatus = Literal["full", "staggered", "critical", "unconscious", "dead"]
 
 STATUS_COLORS = {
-    "healthy": "#4ADE80",         # verde
-    "staggered": "#FB923C",    # naranja
-    "critical": "#EF4444",     # rojo
-    "unconscious": "#38BDF8",  # celeste
-    "dead": "#6B7280",         # gris oscuro
+    "healthy": "#4ADE80",
+    "staggered": "#FB923C",
+    "critical": "#EF4444",
+    "unconscious": "#38BDF8",
+    "dead": "#6B7280",
 }
 
 

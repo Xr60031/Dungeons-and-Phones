@@ -45,6 +45,20 @@ function buildParticlesEl(pct, color) {
   return wrap;
 }
 
+// Parsea una expresión tipo "10+10-50" en una lista de números con
+// signo: [10, 10, -50]. El primer número sin signo se toma como
+// positivo (curación), igual que si tuviera un "+" adelante. Devuelve
+// [] si el input está vacío o tiene caracteres que no son dígitos,
+// espacios, "+" o "-" (evita aplicar cualquier cosa rara a medio
+// escribir, como "10+" o "10*5").
+function parseHpExpression(str) {
+  const cleaned = (str || "").replace(/\s+/g, "");
+  if (!cleaned) return [];
+  const matches = cleaned.match(/[+-]?\d+/g);
+  if (!matches || matches.join("") !== cleaned) return [];
+  return matches.map((m) => parseInt(m, 10));
+}
+
 function sortCharacters(characters) {
   return [...characters].sort((a, b) => {
     const ai = a.initiative ?? -Infinity;
@@ -127,7 +141,11 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
         ${isHiddenEnemyInfo ? "" : `<div class="char-class"></div>`}
       </div>
       <div class="initiative-badge hidden"></div>
-      <div class="ac-badge" data-action="set-ac" title="Tocar para editar la CA">🛡<span class="ac-value"></span></div>
+      ${
+        isHiddenEnemyInfo
+          ? ""
+          : `<div class="ac-badge" data-action="set-ac" title="Tocar para editar la CA">🛡<span class="ac-value"></span></div>`
+      }
       ${
         isDM
           ? `<div class="char-actions">
@@ -153,14 +171,15 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
         ? ""
         : `<div class="hp-delta-row">
              <input
-               type="number"
-               inputmode="numeric"
+               type="text"
+               inputmode="text"
+               autocomplete="off"
+               autocapitalize="off"
+               spellcheck="false"
                class="hp-delta-input"
-               placeholder="0"
-               min="0"
+               placeholder="ej: 10+10-50"
              />
-             <button class="hp-sign-btn negative" data-sign="-1" title="Restar">−</button>
-             <button class="hp-sign-btn positive" data-sign="1" title="Sumar">+</button>
+             <button class="mode-toggle-btn" data-action="toggle-mode" title="Cambiar a HP temporales">🛡</button>
            </div>
            <div class="hp-combo-preview hidden">
              <div class="combo-taps"></div>
@@ -169,9 +188,6 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
                <button class="combo-btn combo-cancel" data-action="combo-cancel">✕ Cancelar</button>
                <button class="combo-btn combo-confirm" data-action="combo-confirm">✓ Confirmar</button>
              </div>
-           </div>
-           <div class="hp-temphp-row">
-             <button class="temphp-btn" data-action="add-temp-hp">🛡 + HP temporales</button>
            </div>`
     }
   `;
@@ -184,17 +200,22 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
     ctx,
     lastPct: null,
     lastBarColor: null,
-    // Toques acumulados de +/- que todavía no se confirmaron. Se aplican
-    // como un único delta al tocar "Confirmar" (o se descartan con
-    // "Cancelar"). Así se puede combinar +10+10+5+1 antes de mandar nada.
+    // Números con signo parseados de la expresión que se está tipeando
+    // en el input (ej: "10+10-50" -> [10, 10, -50]), pendientes de
+    // confirmar. Se aplican como un único delta al tocar "Confirmar"
+    // (o Enter), o se descartan con "Cancelar".
     pendingTaps: [],
+    // El mismo input/desplegable de vida se usa también para HP
+    // temporales: "hp" (default) o "temphp", según el botón 🛡/❤.
+    deltaMode: "hp",
     els: {
       charId: card.querySelector(".char-id"),
       charName: card.querySelector(".char-name"),
       charClass: card.querySelector(".char-class"),
       initiativeBadge: card.querySelector(".initiative-badge"),
-      acValue: card.querySelector(".ac-value"),
+      acValue: isHiddenEnemyInfo ? null : card.querySelector(".ac-value"),
       hpDeltaInput: card.querySelector(".hp-delta-input"),
+      modeToggleBtn: card.querySelector(".mode-toggle-btn"),
       hpBarTrack: card.querySelector(".hp-bar-track"),
       hpBarFill: card.querySelector(".hp-bar-fill"),
       hpBarWrap: card.querySelector(".hp-bar-wrap"),
@@ -206,50 +227,68 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
     },
   };
 
-  card.querySelector('[data-action="set-ac"]').addEventListener("click", () => entry.ctx.onSetArmorClass(entry.char));
+  if (!isHiddenEnemyInfo) {
+    card.querySelector('[data-action="set-ac"]').addEventListener("click", () => entry.ctx.onSetArmorClass(entry.char));
+  }
 
   if (!isHiddenEnemyInfo) {
     const deltaInput = entry.els.hpDeltaInput;
 
-    // Suma (o resta) el valor cargado en el input como un tap más al
-    // combo pendiente, según el signo del botón tocado. El input se
-    // limpia después de cada tap para que el próximo número se cargue
-    // desde cero.
-    const addSignedTap = (sign) => {
-      const amount = parseInt(deltaInput.value, 10);
-      if (!Number.isFinite(amount) || amount <= 0) return;
-      entry.pendingTaps.push(sign * amount);
-      deltaInput.value = "";
+    // Lee lo que hay tipeado (ej: "10+10-50"), lo parsea en una lista
+    // de números con signo, y actualiza la vista previa. No aplica
+    // nada todavía — eso pasa solo al confirmar.
+    const updatePreviewFromInput = () => {
+      entry.pendingTaps = parseHpExpression(deltaInput.value);
       updateComboPreview(entry);
-      deltaInput.focus();
     };
 
-    card.querySelectorAll("[data-sign]").forEach((btn) => {
-      btn.addEventListener("click", () => addSignedTap(parseInt(btn.dataset.sign, 10)));
-    });
+    // Aplica el total de la expresión como UNA sola acción al backend
+    // (una sola llamada), limpia el input y esconde la vista previa.
+    // En modo "hp" es un delta de vida normal; en modo "temphp" es la
+    // propuesta de HP temporales nuevos (que el backend solo aplica
+    // si es mayor a los que ya tenía).
+    const confirmPending = () => {
+      const total = entry.pendingTaps.reduce((a, b) => a + b, 0);
+      entry.pendingTaps = [];
+      deltaInput.value = "";
+      updateComboPreview(entry);
+      if (entry.deltaMode === "temphp") {
+        if (total > 0) entry.ctx.onAddTempHp(entry.char, total);
+      } else if (total !== 0) {
+        entry.ctx.onDelta(entry.char, total);
+      }
+    };
 
-    // Enter en el teclado numérico suma por defecto (el caso más común),
-    // sin obligar a tocar el botón "+" a mano.
+    deltaInput.addEventListener("input", updatePreviewFromInput);
+
+    // Enter confirma directo la expresión completa tipeada (no hace
+    // falta tocar "Confirmar" aparte si ya se terminó de escribir).
     deltaInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        addSignedTap(1);
+        updatePreviewFromInput();
+        if (entry.pendingTaps.length > 0) confirmPending();
       }
     });
 
-    card.querySelector('[data-action="add-temp-hp"]').addEventListener("click", () => entry.ctx.onAddTempHp(entry.char));
+    // Alterna entre modo "vida" y modo "HP temporales" en el mismo
+    // input/desplegable, en vez de tener un campo aparte. Cambiar de
+    // modo descarta lo que hubiera tipeado a medias, para no aplicar
+    // por error un número a la acción equivocada.
+    entry.els.modeToggleBtn.addEventListener("click", () => {
+      entry.deltaMode = entry.deltaMode === "temphp" ? "hp" : "temphp";
+      entry.pendingTaps = [];
+      deltaInput.value = "";
+      updateComboPreview(entry);
+      updateDeltaModeUI(entry);
+    });
+
     card.querySelector('[data-action="combo-cancel"]').addEventListener("click", () => {
       entry.pendingTaps = [];
       deltaInput.value = "";
       updateComboPreview(entry);
     });
-    card.querySelector('[data-action="combo-confirm"]').addEventListener("click", () => {
-      const total = entry.pendingTaps.reduce((a, b) => a + b, 0);
-      entry.pendingTaps = [];
-      deltaInput.value = "";
-      updateComboPreview(entry);
-      if (total !== 0) entry.ctx.onDelta(entry.char, total);
-    });
+    card.querySelector('[data-action="combo-confirm"]').addEventListener("click", confirmPending);
   }
 
   if (isDM) {
@@ -260,12 +299,33 @@ function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
   return entry;
 }
 
-// Pinta (o esconde) la vista previa de la combinación de toques
-// pendientes: "+10 +10 +5 +1", el total, y a qué HP resultaría
-// aplicarlo (usando la misma lógica de temp_hp/clamp que el backend,
-// vía withOptimisticHp, para que la preview sea fiel).
+// Pone el placeholder y el ícono del botón de modo acordes al modo
+// actual del desplegable de vida/HP temporales.
+function updateDeltaModeUI(entry) {
+  const { els, deltaMode } = entry;
+  if (!els.hpDeltaInput || !els.modeToggleBtn) return;
+
+  if (deltaMode === "temphp") {
+    els.hpDeltaInput.placeholder = "ej: 15 (HP temp.)";
+    els.modeToggleBtn.textContent = "❤";
+    els.modeToggleBtn.title = "Cambiar a HP (vida)";
+    els.modeToggleBtn.classList.add("active");
+  } else {
+    els.hpDeltaInput.placeholder = "ej: 10+10-50";
+    els.modeToggleBtn.textContent = "🛡";
+    els.modeToggleBtn.title = "Cambiar a HP temporales";
+    els.modeToggleBtn.classList.remove("active");
+  }
+}
+
+// Pinta (o esconde) la vista previa de la combinación tipeada:
+// "+10 +10 +5", el total, y qué pasaría si se confirma. En modo "hp"
+// muestra a qué vida quedaría (usando la misma lógica de temp_hp/clamp
+// que el backend, vía withOptimisticHp). En modo "temphp" muestra si
+// el escudo se reemplaza (el total es mayor al actual) o si no cambia
+// nada (el total es menor o igual), sin aplicar todavía nada.
 function updateComboPreview(entry) {
-  const { els, char, pendingTaps } = entry;
+  const { els, char, pendingTaps, deltaMode } = entry;
   if (!els.comboPreview) return;
 
   if (pendingTaps.length === 0) {
@@ -276,10 +336,20 @@ function updateComboPreview(entry) {
   }
 
   const total = pendingTaps.reduce((a, b) => a + b, 0);
-  const preview = withOptimisticHp(char, total);
-
   els.comboPreview.classList.remove("hidden");
   els.comboTaps.textContent = pendingTaps.map((d) => (d > 0 ? "+" + d : d)).join(" ");
+
+  if (deltaMode === "temphp") {
+    const current = char.temp_hp || 0;
+    if (total > current) {
+      els.comboResult.innerHTML = `🛡 ${current} → <strong style="color:var(--gold)">${total}</strong>`;
+    } else {
+      els.comboResult.innerHTML = `🛡 sin cambios — ${total} no supera el escudo actual (${current})`;
+    }
+    return;
+  }
+
+  const preview = withOptimisticHp(char, total);
   els.comboResult.innerHTML = `${char.hp_current} → <strong style="color:${preview.status_color}">${
     preview.hp_current
   }</strong> (${total > 0 ? "+" : ""}${total})`;
@@ -311,7 +381,9 @@ function updateCharCard(entry, char, displayIndex, ctx) {
     els.initiativeBadge.classList.add("hidden");
   }
 
-  els.acValue.textContent = char.armor_class ?? 10;
+  if (els.acValue) {
+    els.acValue.textContent = char.armor_class ?? 10;
+  }
 
   // ---- barra de HP ----
   const pct = char.hp_max > 0 ? Math.max(0, Math.min(100, (char.hp_current / char.hp_max) * 100)) : 0;
@@ -396,6 +468,23 @@ function updateCharCard(entry, char, displayIndex, ctx) {
     }`;
   } else if (condEl) {
     condEl.remove();
+  }
+
+  // condition-note-badge: la condición libre que escribió el DM (texto
+  // suelto, no ligada a la lista fija de D&D). Mismo criterio de
+  // visibilidad que el resto de la info "de jugador": no se muestra
+  // si es un enemigo oculto.
+  let noteEl = el.querySelector(".condition-note-badge");
+  const hasNote = !!char.condition_note;
+  if (hasNote && !isHiddenEnemyInfo) {
+    if (!noteEl) {
+      noteEl = document.createElement("div");
+      noteEl.className = "condition-note-badge";
+      (condEl || els.hpStatusLabel).insertAdjacentElement("afterend", noteEl);
+    }
+    noteEl.textContent = char.condition_note;
+  } else if (noteEl) {
+    noteEl.remove();
   }
 
   if (!isHiddenEnemyInfo) {

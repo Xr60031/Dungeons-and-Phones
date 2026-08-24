@@ -57,4 +57,8 @@ def run_migrations():
             conn.execute(
                 text('ALTER TABLE characters ADD COLUMN armor_class INTEGER DEFAULT 10')
             )
+        if "condition_note" not in existing_cols:
+            conn.execute(
+                text('ALTER TABLE characters ADD COLUMN condition_note VARCHAR')
+            )
         conn.commit()

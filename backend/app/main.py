@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from . import models, schemas, crud
 from .database import engine, get_db, run_migrations
 from .websocket_manager import manager
-from .qr_utils import build_connection_url, generate_qr_png_bytes
+from .qr_utils import build_connection_url, build_fallback_ip_url, generate_qr_png_bytes
 from .hp_status import get_hp_status, STATUS_COLORS
 
 models.Base.metadata.create_all(bind=engine)
@@ -53,6 +53,7 @@ def character_to_dict(char: models.Character) -> dict:
         "order_index": char.order_index,
         "condition": char.condition or "Healthy",
         "condition_rounds": char.condition_rounds,
+        "condition_note": char.condition_note,
         "status": status,
         "status_color": STATUS_COLORS[status],
     }
@@ -85,8 +86,12 @@ def connection_info(port: int = 8000):
     navegador (que sirve este mismo backend) y es esa página la que,
     ya cargada, abre su propio WebSocket contra location.host — por
     eso acá alcanza con la URL http normal.
+
+    `url` es el link genérico por mDNS (no cambia aunque cambie la IP
+    de la PC); `fallback_url` es la IP directa, por si algún celular no
+    resuelve mDNS en esa red.
     """
-    return {"url": build_connection_url(port)}
+    return {"url": build_connection_url(port), "fallback_url": build_fallback_ip_url(port)}
 
 
 @app.get("/connection-qr.png")
@@ -156,8 +161,9 @@ async def change_hp(
 async def add_temp_hp(
     character_id: int, data: schemas.TempHPAdd, db: Session = Depends(get_db)
 ):
-    """Suma HP temporales (escudo). A diferencia de /hp, nunca resta:
-    cualquiera (DM o jugador) puede pedir esto para su propio personaje."""
+    """Fija los HP temporales (escudo) al valor nuevo, pero solo si es
+    mayor al que ya tenía — los HP temporales no se acumulan, se toma
+    el más alto. Cualquiera (DM o jugador) puede pedir esto."""
     char = crud.get_character(db, character_id)
     if not char:
         raise HTTPException(404, "Personaje no encontrado")

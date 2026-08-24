@@ -20,6 +20,7 @@ class CharacterBase(BaseModel):
     initiative: Optional[int] = None
     condition: str = "Healthy"
     condition_rounds: Optional[int] = None
+    condition_note: Optional[str] = None
 
 
 class CharacterCreate(CharacterBase):
@@ -39,6 +40,7 @@ class CharacterUpdate(BaseModel):
     order_index: Optional[int] = None
     condition: Optional[str] = None
     condition_rounds: Optional[int] = None
+    condition_note: Optional[str] = None
 
 
 class HPDelta(BaseModel):
@@ -46,7 +48,8 @@ class HPDelta(BaseModel):
 
 
 class TempHPAdd(BaseModel):
-    amount: int  # siempre positivo, se suma a los HP temporales existentes
+    amount: int  # valor nuevo propuesto de HP temporales; solo reemplaza
+    # al actual si es mayor (ver crud.add_temp_hp)
 
 
 class ArmorClassSet(BaseModel):
