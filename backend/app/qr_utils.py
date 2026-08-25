@@ -1,9 +1,3 @@
-"""
-Utilidades para detectar la IP local de la PC del DM, anunciar un
-nombre mDNS fijo (para no depender de que la IP cambie de red en red)
-y generar un código QR que los teléfonos escanean para conectarse
-fácilmente (Fase 3 del roadmap: "QR de conexión").
-"""
 import io
 import socket
 
@@ -20,9 +14,7 @@ MDNS_HOSTNAME = "dungeonsandphones"
 
 def get_local_ip() -> str:
     """
-    Obtiene la IP local de la PC en la red WiFi (no la de loopback).
-    Trick clásico: abrir un socket UDP hacia una IP externa (no envía
-    datos realmente) para que el SO elija la interfaz de red correcta.
+    Obtiene la IP local de la PC en la red WiFi.
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:

@@ -29,11 +29,6 @@ def get_db():
 
 
 def run_migrations():
-    """
-    Migración liviana para bases ya existentes: `create_all` no altera
-    tablas que ya estaban creadas, así que si el .db es de antes de que
-    existieran `condition`/`condition_rounds`, las agregamos a mano.
-    """
     with engine.connect() as conn:
         existing_cols = {
             row[1] for row in conn.execute(text('PRAGMA table_info(characters)'))
@@ -65,9 +60,6 @@ def run_migrations():
             conn.execute(
                 text("ALTER TABLE characters ADD COLUMN char_type VARCHAR DEFAULT 'player'")
             )
-            # Migrar el flag viejo `is_monster` (booleano) al nuevo
-            # `char_type` (con tres valores: player/npc/monster), para
-            # no perder la categoría de los personajes ya guardados.
             if "is_monster" in existing_cols:
                 conn.execute(
                     text("UPDATE characters SET char_type = 'monster' WHERE is_monster = 1")

@@ -1,10 +1,3 @@
-/**
- * Service worker mínimo: solo cachea el shell estático (HTML/CSS/JS/
- * fuentes/íconos) para que la PWA abra instantáneo y quede instalable.
- * Nunca cachea /ws/*, /campaigns/*, /characters/* ni /connection-*:
- * esos SIEMPRE tienen que ir en vivo contra el backend en la red local.
- */
-
 const CACHE_NAME = "dnp-shell-v2";
 const SHELL_FILES = [
   "/",
@@ -46,7 +39,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/connection-");
 
   if (isDynamic || event.request.method !== "GET") {
-    return; // dejar pasar directo a la red, sin intervenir
+    return;
   }
 
   event.respondWith(

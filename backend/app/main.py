@@ -72,11 +72,6 @@ async def broadcast_state(db: Session, campaign_id: int):
         },
     )
 
-
-# ---------------------------------------------------------------------
-# Conexión / QR (Fase 3)
-# ---------------------------------------------------------------------
-
 @app.get("/connection-info")
 def connection_info(port: int = 8000):
     """Devuelve la URL de la página que debe abrir el celular (la PWA).
@@ -206,7 +201,6 @@ async def websocket_endpoint(websocket: WebSocket, campaign_id: int):
     db = next(get_db())
     await manager.connect(campaign_id, websocket)
     try:
-        # Al conectar, enviamos el estado actual (soporta reconexión automática)
         await broadcast_state(db, campaign_id)
 
         while True:
@@ -258,15 +252,5 @@ async def websocket_endpoint(websocket: WebSocket, campaign_id: int):
     finally:
         db.close()
 
-
-# ---------------------------------------------------------------------
-# Frontend (PWA) — reemplaza a la app de Expo/React Native
-# ---------------------------------------------------------------------
-# Montado al final a propósito: FastAPI prueba las rutas en el orden en
-# que se registran, así que todo lo de arriba (/campaigns, /characters,
-# /ws/{campaign_id}, /connection-info, /connection-qr.png) sigue
-# matcheando primero. Cualquier otro path (la página, el JS, el CSS,
-# los íconos) cae en este Mount y lo sirve StaticFiles. html=True hace
-# que "/" devuelva index.html.
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="pwa")

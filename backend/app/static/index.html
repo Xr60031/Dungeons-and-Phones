@@ -1,133 +1,133 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <meta name="theme-color" content="#14110F" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="D&P" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-  <link rel="icon" href="/icons/icon-192.png" />
-  <title>Dungeons &amp; Phones</title>
-  <link rel="stylesheet" href="/css/style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#14110F" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="D&P" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+<link rel="icon" href="/icons/icon-192.png" />
+<title>Dungeons &amp; Phones</title>
+<link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <div id="app">
-    <header class="app-header">
-      <div class="app-title">D&amp;P</div>
-      <div class="header-right">
-        <div class="conn-status">
-          <span id="conn-dot" class="conn-dot"></span>
-          <span id="conn-label">conectando…</span>
-        </div>
-        <button id="btn-change-role" class="pixel-btn ghost small hidden" title="Volver al menú principal">⟲ salir</button>
-      </div>
-    </header>
+<div id="app">
+<header class="app-header">
+	<div class="app-title">D&amp;P</div>
+	<div class="header-right">
+	<div class="conn-status">
+		<span id="conn-dot" class="conn-dot"></span>
+		<span id="conn-label">conectando…</span>
+	</div>
+	<button id="btn-change-role" class="pixel-btn ghost small hidden" title="Volver al menú principal">⟲ salir</button>
+	</div>
+</header>
 
-    <!-- Pantalla 1: elegir rol -->
-    <section id="screen-role" class="role-screen hidden">
-      <div class="role-title">DUNGEONS<br />&amp; PHONES</div>
-      <p class="role-subtitle">Tablero de HP e iniciativa para tu mesa. Todos ven lo mismo, al instante.</p>
-      <div class="role-buttons">
-        <button class="pixel-btn" data-role="dm">Soy el DM</button>
-        <button class="pixel-btn secondary" data-role="player">Soy jugador</button>
-      </div>
-      <p class="role-hint" id="role-hint"></p>
-    </section>
+<!-- Pantalla 1: elegir rol -->
+<section id="screen-role" class="role-screen hidden">
+	<div class="role-title">DUNGEONS<br />&amp; PHONES</div>
+	<p class="role-subtitle">Tablero de HP e iniciativa para tu mesa. Todos ven lo mismo, al instante.</p>
+	<div class="role-buttons">
+	<button class="pixel-btn" data-role="dm">Soy el DM</button>
+	<button class="pixel-btn secondary" data-role="player">Soy jugador</button>
+	</div>
+	<p class="role-hint" id="role-hint"></p>
+</section>
 
-    <!-- Pantalla 2: tablero -->
-    <section id="screen-board" class="hidden">
-      <div id="char-list"></div>
-    </section>
-  </div>
+<!-- Pantalla 2: tablero -->
+<section id="screen-board" class="hidden">
+	<div id="char-list"></div>
+</section>
+</div>
 
-  <button id="fab-add" class="pixel-btn fab hidden">+ personaje</button>
+<button id="fab-add" class="pixel-btn fab hidden">+ personaje</button>
 
-  <!-- Modal alta/edición (solo DM) -->
-  <div id="modal-overlay" class="modal-overlay hidden">
-    <form id="char-form" class="pixel-panel modal">
-      <div class="modal-title" id="modal-title">Nuevo personaje</div>
+<!-- Modal alta/edición (solo DM) -->
+<div id="modal-overlay" class="modal-overlay hidden">
+<form id="char-form" class="pixel-panel modal">
+	<div class="modal-title" id="modal-title">Nuevo personaje</div>
 
-      <div class="field">
-        <label for="f-name">Nombre</label>
-        <input type="text" id="f-name" required maxlength="40" />
-      </div>
+	<div class="field">
+	<label for="f-name">Nombre</label>
+	<input type="text" id="f-name" required maxlength="40" />
+	</div>
 
-      <div class="field-row">
-        <div class="field">
-          <label for="f-class">Clase</label>
-          <input type="text" id="f-class" maxlength="30" placeholder="Guerrero, Goblin..." />
-        </div>
-        <div class="field">
-          <label for="f-initiative">Iniciativa</label>
-          <input type="number" id="f-initiative" placeholder="—" />
-        </div>
-        <div class="field">
-          <label for="f-armor-class">CA</label>
-          <input type="number" id="f-armor-class" min="0" value="10" />
-        </div>
-      </div>
+	<div class="field-row">
+	<div class="field">
+		<label for="f-class">Clase</label>
+		<input type="text" id="f-class" maxlength="30" placeholder="Guerrero, Goblin..." />
+	</div>
+	<div class="field">
+		<label for="f-initiative">Iniciativa</label>
+		<input type="number" id="f-initiative" placeholder="—" />
+	</div>
+	<div class="field">
+		<label for="f-armor-class">CA</label>
+		<input type="number" id="f-armor-class" min="0" value="10" />
+	</div>
+	</div>
 
-      <div class="field-row">
-        <div class="field">
-          <label for="f-hp-current">HP actual</label>
-          <input type="number" id="f-hp-current" required value="10" />
-        </div>
-        <div class="field">
-          <label for="f-hp-max">HP máximo</label>
-          <input type="number" id="f-hp-max" required value="10" />
-        </div>
-        <div class="field">
-          <label for="f-hp-temp">HP temp.</label>
-          <input type="number" id="f-hp-temp" min="0" value="0" />
-        </div>
-      </div>
+	<div class="field-row">
+	<div class="field">
+		<label for="f-hp-current">HP actual</label>
+		<input type="number" id="f-hp-current" required value="10" />
+	</div>
+	<div class="field">
+		<label for="f-hp-max">HP máximo</label>
+		<input type="number" id="f-hp-max" required value="10" />
+	</div>
+	<div class="field">
+		<label for="f-hp-temp">HP temp.</label>
+		<input type="number" id="f-hp-temp" min="0" value="0" />
+	</div>
+	</div>
 
-      <div class="field">
-        <label for="f-char-type">Tipo</label>
-        <select id="f-char-type">
-          <option value="player">Jugador</option>
-          <option value="npc">NPC</option>
-          <option value="monster">Monstruo / enemigo</option>
-        </select>
-      </div>
+	<div class="field">
+	<label for="f-char-type">Tipo</label>
+	<select id="f-char-type">
+		<option value="player">Jugador</option>
+		<option value="npc">NPC</option>
+		<option value="monster">Monstruo / enemigo</option>
+	</select>
+	</div>
 
-      <div class="field">
-        <label for="f-condition">Condición</label>
-        <select id="f-condition"></select>
-      </div>
+	<div class="field">
+	<label for="f-condition">Condición</label>
+	<select id="f-condition"></select>
+	</div>
 
-      <div class="field">
-        <label for="f-condition-rounds">Rondas restantes</label>
-        <input type="number" id="f-condition-rounds" min="0" placeholder="—" />
-      </div>
+	<div class="field">
+	<label for="f-condition-rounds">Rondas restantes</label>
+	<input type="number" id="f-condition-rounds" min="0" placeholder="—" />
+	</div>
 
-      <div class="field">
-        <label for="f-condition-note">Condición libre (opcional)</label>
-        <input
-          type="text"
-          id="f-condition-note"
-          maxlength="80"
-          placeholder="Ej: Maldito por el altar, marcado por el cazador..."
-        />
-      </div>
+	<div class="field">
+	<label for="f-condition-note">Condición libre (opcional)</label>
+	<input
+		type="text"
+		id="f-condition-note"
+		maxlength="80"
+		placeholder="Ej: Maldito por el altar, marcado por el cazador..."
+	/>
+	</div>
 
-      <div class="modal-actions">
-        <button type="button" class="pixel-btn secondary" id="modal-cancel">Cancelar</button>
-        <button type="submit" class="pixel-btn" id="modal-save">Guardar</button>
-      </div>
-    </form>
-  </div>
+	<div class="modal-actions">
+	<button type="button" class="pixel-btn secondary" id="modal-cancel">Cancelar</button>
+	<button type="submit" class="pixel-btn" id="modal-save">Guardar</button>
+	</div>
+</form>
+</div>
 
-  <div id="toast" class="hidden"></div>
+<div id="toast" class="hidden"></div>
 
-  <script src="/js/ws.js"></script>
-  <script src="/js/hpStatus.js"></script>
-  <script src="/js/conditions.js"></script>
-  <script src="/js/render.js"></script>
-  <script src="/js/app.js"></script>
+<script src="/js/ws.js"></script>
+<script src="/js/hpStatus.js"></script>
+<script src="/js/conditions.js"></script>
+<script src="/js/render.js"></script>
+<script src="/js/app.js"></script>
 </body>
 </html>

@@ -75,9 +75,6 @@ def apply_hp_delta(
     remaining_delta = delta
 
     if delta < 0:
-        # Daño: primero se come los HP temporales (de a poco, no todos de
-        # golpe). Solo lo que sobra después de gastar el escudo temporal
-        # le pega a la vida real.
         damage = -delta
         temp_hp = character.temp_hp or 0
         absorbed = min(temp_hp, damage)
@@ -85,13 +82,12 @@ def apply_hp_delta(
         remaining_delta = -(damage - absorbed)
 
     new_hp = character.hp_current + remaining_delta
-    # Clamp entre 0 (o negativo permitido hasta -hp_max para "muerte masiva") y hp_max
     new_hp = max(min(new_hp, character.hp_max), -character.hp_max)
     character.hp_current = new_hp
 
     history = list(character.damage_history or [])
     history.append({"delta": delta, "ts": time.time(), "result_hp": new_hp})
-    character.damage_history = history[-50:]  # limitar historial
+    character.damage_history = history[-50:]
 
     db.commit()
     db.refresh(character)
@@ -101,12 +97,6 @@ def apply_hp_delta(
 def add_temp_hp(
     db: Session, character: models.Character, amount: int
 ) -> models.Character:
-    """Fija los HP temporales (escudo). Sigue la regla estándar de
-    D&D: los HP temporales NO se acumulan entre sí. Si el valor nuevo
-    es mayor al que ya tenía, lo reemplaza; si es menor o igual, no
-    hace nada (se queda con el más alto). Lo puede pedir cualquiera
-    (DM o jugador), igual que editar el personaje que es solo del DM
-    para el resto de los campos."""
     current = character.temp_hp or 0
     if amount > current:
         character.temp_hp = amount
@@ -118,9 +108,6 @@ def add_temp_hp(
 def set_armor_class(
     db: Session, character: models.Character, value: int
 ) -> models.Character:
-    """Fija la Clase de Armadura (CA). Es solo informativa (no afecta
-    ningún cálculo del backend) y, al igual que los HP temporales,
-    la puede tocar cualquiera (DM o jugador), no solo el DM."""
     character.armor_class = max(value, 0)
     db.commit()
     db.refresh(character)
