@@ -48,7 +48,7 @@ def character_to_dict(char: models.Character) -> dict:
         "hp_max": char.hp_max,
         "temp_hp": char.temp_hp or 0,
         "armor_class": char.armor_class if char.armor_class is not None else 10,
-        "is_monster": char.is_monster,
+        "char_type": char.char_type or "player",
         "initiative": char.initiative,
         "order_index": char.order_index,
         "condition": char.condition or "Healthy",

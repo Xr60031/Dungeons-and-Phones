@@ -146,6 +146,7 @@ function openCreateModal() {
   document.getElementById("f-hp-temp").value = 0;
   document.getElementById("f-armor-class").value = 10;
   el.fCondition.value = 0;
+  document.getElementById("f-char-type").value = "player";
   el.fConditionRounds.value = "";
   el.fConditionNote.value = "";
   el.modalOverlay.classList.remove("hidden");
@@ -161,7 +162,7 @@ function openEditModal(char) {
   document.getElementById("f-hp-max").value = char.hp_max;
   document.getElementById("f-hp-temp").value = char.temp_hp ?? 0;
   document.getElementById("f-armor-class").value = char.armor_class ?? 10;
-  document.getElementById("f-is-monster").checked = !!char.is_monster;
+  document.getElementById("f-char-type").value = char.char_type || "player";
   const idx = conditionIndex(char.condition || "Healthy");
   el.fCondition.value = idx;
   el.fConditionRounds.value = char.condition_rounds ?? "";
@@ -191,7 +192,7 @@ el.charForm.addEventListener("submit", (e) => {
     hp_max: parseInt(document.getElementById("f-hp-max").value, 10),
     temp_hp: parseInt(document.getElementById("f-hp-temp").value, 10) || 0,
     armor_class: parseInt(document.getElementById("f-armor-class").value, 10) || 0,
-    is_monster: document.getElementById("f-is-monster").checked,
+    char_type: document.getElementById("f-char-type").value,
     initiative: initiativeRaw === "" ? null : parseInt(initiativeRaw, 10),
     condition: CONDITIONS[parseInt(el.fCondition.value, 10)],
     condition_rounds: roundsRaw === "" ? null : parseInt(roundsRaw, 10),

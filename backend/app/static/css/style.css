@@ -238,10 +238,71 @@ button {
 }
 
 /* ---------- character list ---------- */
+/* Mobile-first (el default de toda la vida): una sola hilera vertical
+   con todos los personajes mezclados, ordenados por iniciativa global
+   — exactamente el comportamiento que ya había. */
 #char-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.column-header {
+  display: none;
+}
+
+/* ---------- pantallas anchas (tablet/desktop): 3 columnas ---------- */
+/* Mismo DOM, mismo orden de iniciativa — el filtro por columna es puro
+   CSS vía [data-char-type], usando ese mismo orden ya calculado en JS
+   (sortCharacters), así que la posición relativa dentro de cada
+   columna también respeta la iniciativa. */
+@media (min-width: 860px) {
+  #app {
+    max-width: 1200px;
+  }
+
+  #char-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 18px;
+  }
+
+  .column-header {
+    display: block;
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--stone-950);
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--gold);
+    text-shadow: 2px 2px 0 #000;
+    text-align: center;
+    letter-spacing: 0.5px;
+    padding: 4px 4px 12px;
+  }
+
+  .column-header[data-char-type="player"],
+  .char-card[data-char-type="player"] {
+    grid-column: 1;
+  }
+
+  .column-header[data-char-type="npc"],
+  .char-card[data-char-type="npc"] {
+    grid-column: 2;
+  }
+
+  .column-header[data-char-type="monster"],
+  .char-card[data-char-type="monster"] {
+    grid-column: 3;
+  }
+
+  /* Si no hay ningún personaje todavía, el mensaje ocupa las 3
+     columnas en vez de quedar apretado en la primera. */
+  #char-list .empty-state {
+    grid-column: 1 / -1;
+  }
 }
 
 .empty-state {
@@ -296,6 +357,10 @@ button {
 
 .char-name.is-monster {
   color: var(--hp-critical);
+}
+
+.char-name.is-npc {
+  color: #38bdf8; /* celeste, distinto del rojo de enemigo y del dorado del DM */
 }
 
 .char-class {

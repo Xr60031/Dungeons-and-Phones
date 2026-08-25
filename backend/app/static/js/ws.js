@@ -13,7 +13,7 @@
  *     - set_armor_class   {character_id, value}   (CA, solo informativa)
  *     - update_character  {character_id, data: {...}}
  *     - create_character  {name, char_class, sprite, hp_current, hp_max,
- *                           is_monster, initiative}
+ *                           char_type, initiative}
  *     - delete_character  {character_id}
  *   ← servidor responde (broadcast): {action:"state", payload:{characters, connected_devices}}
  *                                     {action:"error", payload:{message}}

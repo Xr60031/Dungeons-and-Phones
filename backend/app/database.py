@@ -61,4 +61,15 @@ def run_migrations():
             conn.execute(
                 text('ALTER TABLE characters ADD COLUMN condition_note VARCHAR')
             )
+        if "char_type" not in existing_cols:
+            conn.execute(
+                text("ALTER TABLE characters ADD COLUMN char_type VARCHAR DEFAULT 'player'")
+            )
+            # Migrar el flag viejo `is_monster` (booleano) al nuevo
+            # `char_type` (con tres valores: player/npc/monster), para
+            # no perder la categoría de los personajes ya guardados.
+            if "is_monster" in existing_cols:
+                conn.execute(
+                    text("UPDATE characters SET char_type = 'monster' WHERE is_monster = 1")
+                )
         conn.commit()

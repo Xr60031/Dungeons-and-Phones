@@ -5,7 +5,6 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Boolean,
     ForeignKey,
     ARRAY,
 )
@@ -28,8 +27,10 @@ class Campaign(Base):
 
 class Character(Base):
     """
-    Representa tanto a un Personaje Jugador (PJ) como a un monstruo.
-    Se distinguen con el flag `is_monster`.
+    Representa un Personaje Jugador (PJ), un NPC o un monstruo/enemigo.
+    Se distinguen con `char_type`: "player" | "npc" | "monster". Solo
+    los "monster" ocultan su info sensible (CA, HP exacto, condición)
+    a los jugadores; los NPC se muestran completos, igual que los PJ.
     """
 
     __tablename__ = "characters"
@@ -47,7 +48,7 @@ class Character(Base):
     # no se acumulan, se reemplaza por el valor más alto (ver crud.add_temp_hp)
     armor_class = Column(Integer, nullable=False, default=10)  # CA, solo informativa
 
-    is_monster = Column(Boolean, default=False)
+    char_type = Column(String, nullable=False, default="player")  # player | npc | monster
 
     # Condición de estado (D&D): Healthy, Poisoned, Stunned, etc.
     condition = Column(String, default="Healthy")

@@ -16,7 +16,7 @@ class CharacterBase(BaseModel):
     hp_max: int = 10
     temp_hp: int = 0
     armor_class: int = 10
-    is_monster: bool = False
+    char_type: Literal["player", "npc", "monster"] = "player"
     initiative: Optional[int] = None
     condition: str = "Healthy"
     condition_rounds: Optional[int] = None
@@ -35,7 +35,7 @@ class CharacterUpdate(BaseModel):
     hp_max: Optional[int] = None
     temp_hp: Optional[int] = None
     armor_class: Optional[int] = None
-    is_monster: Optional[bool] = None
+    char_type: Optional[Literal["player", "npc", "monster"]] = None
     initiative: Optional[int] = None
     order_index: Optional[int] = None
     condition: Optional[str] = None

@@ -68,9 +68,9 @@ function sortCharacters(characters) {
   });
 }
 
-function renderCharList(container, characters, { isDM, onDelta, onEdit, onDelete, onAddTempHp }) {
+function renderCharList(container, characters, { isDM, onDelta, onEdit, onDelete, onAddTempHp, onSetArmorClass }) {
   const sorted = sortCharacters(characters);
-  const ctx = { isDM, onDelta, onEdit, onDelete, onAddTempHp };
+  const ctx = { isDM, onDelta, onEdit, onDelete, onAddTempHp, onSetArmorClass };
 
   if (sorted.length === 0) {
     container.innerHTML = `<div class="empty-state">${
@@ -88,6 +88,12 @@ function renderCharList(container, characters, { isDM, onDelta, onEdit, onDelete
     container.innerHTML = "";
   }
 
+  // En pantallas anchas el CSS convierte esto en 3 columnas (Party /
+  // NPC / Enemigos); estos encabezados son los títulos de esas
+  // columnas. En el teléfono quedan ocultos por CSS y todo se ve en
+  // una sola hilera, igual que siempre.
+  ensureColumnHeaders(container);
+
   const seenIds = new Set();
 
   sorted.forEach((char, idx) => {
@@ -101,7 +107,7 @@ function renderCharList(container, characters, { isDM, onDelta, onEdit, onDelete
     // la reconstruimos de cero. Esto es raro (no pasa en el uso normal,
     // el rol es fijo por sesión), así que perder la animación acá no
     // afecta el caso común.
-    const isHiddenEnemyInfo = char.is_monster && !isDM;
+    const isHiddenEnemyInfo = char.char_type === "monster" && !isDM;
     if (!entry || entry.isDM !== isDM || entry.isHiddenEnemyInfo !== isHiddenEnemyInfo) {
       if (entry) entry.el.remove();
       entry = buildCharCard(char, isDM, isHiddenEnemyInfo, ctx);
@@ -111,8 +117,10 @@ function renderCharList(container, characters, { isDM, onDelta, onEdit, onDelete
     updateCharCard(entry, char, idx, ctx);
 
     // Asegurar la posición correcta sin recrear el nodo: insertBefore
-    // sobre un nodo ya presente en el DOM simplemente lo mueve.
-    const expectedNode = container.children[idx];
+    // sobre un nodo ya presente en el DOM simplemente lo mueve. Los
+    // encabezados de columna ocupan los primeros N lugares, así que
+    // el índice esperado de cada card se corre esa cantidad.
+    const expectedNode = container.children[idx + COLUMN_HEADERS.length];
     if (expectedNode !== entry.el) {
       container.insertBefore(entry.el, expectedNode || null);
     }
@@ -127,11 +135,42 @@ function renderCharList(container, characters, { isDM, onDelta, onEdit, onDelete
   });
 }
 
+// Título + tipo de cada columna (el tipo hace de selector CSS para
+// ubicarla en su columna del grid — ver style.css). Ambos, el
+// encabezado y las cards de ese tipo, comparten `data-char-type`.
+const COLUMN_HEADERS = [
+  { charType: "player", label: "Party" },
+  { charType: "npc", label: "NPCs" },
+  { charType: "monster", label: "Enemigos" },
+];
+
+// Inserta los 3 encabezados de columna al principio del container, una
+// sola vez (si ya están de una corrida anterior, no hace nada). Se
+// insertan como nodos reales — no van y vienen en cada render — para
+// no interferir con el resto de la lógica de renderCharList que ya
+// asume que sus únicos hijos manejados por índice son las cards.
+function ensureColumnHeaders(container) {
+  if (container.querySelector(".column-header")) return;
+  const nodes = COLUMN_HEADERS.map(({ charType, label }) => {
+    const div = document.createElement("div");
+    div.className = "column-header";
+    div.dataset.charType = charType;
+    div.textContent = label;
+    return div;
+  });
+  container.prepend(...nodes);
+}
+
+
+
 // Crea el esqueleto de la card UNA sola vez. El contenido dinámico se
 // llena después vía updateCharCard.
 function buildCharCard(char, isDM, isHiddenEnemyInfo, ctx) {
   const card = document.createElement("div");
   card.className = "char-card pixel-panel";
+  // Determina en qué columna cae en pantallas anchas (ver style.css);
+  // se refresca en cada updateCharCard por si el DM le cambia el tipo.
+  card.dataset.charType = char.char_type || "player";
 
   card.innerHTML = `
     <div class="char-card-top">
@@ -365,13 +404,17 @@ function updateCharCard(entry, char, displayIndex, ctx) {
 
   el.classList.toggle("is-dead", char.status === "dead");
   el.classList.toggle("is-unconscious", char.status === "unconscious");
+  el.dataset.charType = char.char_type || "player";
 
   els.charId.textContent = displayIndex + 1;
   els.charName.textContent = char.name;
-  els.charName.classList.toggle("is-monster", !!char.is_monster);
+  els.charName.classList.toggle("is-monster", char.char_type === "monster");
+  els.charName.classList.toggle("is-npc", char.char_type === "npc");
 
   if (els.charClass) {
-    els.charClass.textContent = char.char_class || (char.is_monster ? "Monstruo" : "");
+    els.charClass.textContent =
+      char.char_class ||
+      (char.char_type === "monster" ? "Monstruo" : char.char_type === "npc" ? "NPC" : "");
   }
 
   if (char.initiative !== null && char.initiative !== undefined) {
